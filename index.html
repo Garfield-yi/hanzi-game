@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>汉字消消乐 · 一年级会认字</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            background: linear-gradient(145deg, #f0f7ff 0%, #e6f0fa 100%);
+            min-height: 100vh;
+        }
+        .card-hover { transition: all 0.2s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .match-animation { animation: matchPop 0.5s ease-out forwards; }
+        @keyframes matchPop {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.18); background-color: #4ade80; box-shadow: 0 0 30px rgba(74,222,128,0.4); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        .timer-pulse { animation: pulse 1.8s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+        .glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); }
+        .shadow-soft { box-shadow: 0 8px 32px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04); }
+        ::-webkit-scrollbar { width:6px; height:6px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:8px; }
+        ::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+        .fade-enter { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .no-select { user-select: none; }
+        .rank-1 { background-color: #fef9c3 !important; }
+        .rank-2 { background-color: #fef3c7 !important; }
+        .rank-3 { background-color: #fef3c7 !important; }
+        .rank-badge {
+            display: inline-block; width:24px; height:24px; line-height:24px; text-align:center;
+            border-radius:50%; font-weight:700; font-size:13px;
+        }
+        .rank-1 .rank-badge { background:#facc15; color:#000; }
+        .rank-2 .rank-badge { background:#d1d5db; color:#1f2937; }
+        .rank-3 .rank-badge { background:#f59e0b; color:#fff; }
+        .mode-tag { font-size:0.7rem; background:#e0e7ff; padding:0 8px; border-radius:12px; color:#4338ca; }
+        .stats-badge {
+            background: rgba(255,255,255,0.5);
+            padding: 0 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .stats-badge span { font-weight: 600; color: #1f2937; }
+
+        /* 词库管理样式 */
+        .edit-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+        }
+        .edit-row input, .edit-row .word-list-input {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+        .edit-row .char-input { width: 60px; }
+        .edit-row .pinyin-input { width: 80px; }
+        .edit-row .word-list-input { flex: 1; min-width: 150px; }
+        .edit-row .btn-sm { padding: 2px 10px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; }
+        .edit-row .btn-del { background: #fee2e2; color: #b91c1c; }
+        .edit-row .btn-del:hover { background: #fecaca; }
+        .edit-row .btn-add-word { background: #dbeafe; color: #1e40af; }
+        .edit-row .btn-add-word:hover { background: #bfdbfe; }
+        .word-tag {
+            display: inline-block;
+            background: #e5e7eb;
+            border-radius: 12px;
+            padding: 0 8px;
+            margin: 2px 4px 2px 0;
+            font-size: 0.8rem;
+        }
+        .word-tag .del-word {
+            cursor: pointer;
+            margin-left: 4px;
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .word-tag .del-word:hover { color: #b91c1c; }
+    </style>
+</head>
+<body>
+
+<!-- ===== 顶部导航 ===== -->
+<nav class="glass-card shadow-soft sticky top-0 z-50 border-b border-white/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap items-center justify-between h-16 gap-2">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-puzzle-piece text-white text-sm"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800 tracking-tight">汉字消消乐</h1>
+                <span class="hidden sm:inline text-xs text-gray-400 font-medium ml-1">· 一年级</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- 学生输入 -->
+                <div class="flex items-center gap-2 bg-white/60 rounded-full px-3 py-1.5 border border-blue-100/60 shadow-sm">
+                    <i class="fa-regular fa-user text-blue-400 text-sm"></i>
+                    <input id="studentInput" type="text" placeholder="输入姓名..." maxlength="20"
+                        class="bg-transparent border-none outline-none text-sm w-24 sm:w-32 text-gray-700 placeholder-gray-400 font-medium" />
+                    <button id="startWithNameBtn" class="text-xs font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-1 rounded-full hover:shadow-md transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        开始
+                    </button>
+                </div>
+
+                <!-- 实时统计 -->
+                <div class="hidden sm:flex items-center gap-1 text-xs text-gray-500">
+                    <span class="stats-badge"><i class="fa-regular fa-calendar"></i> 场次: <span id="statTotalGames">0</span></span>
+                    <span class="stats-badge"><i class="fa-regular fa-star"></i> 最高: <span id="statBestScore">—</span></span>
+                    <span class="stats-badge"><i class="fa-regular fa-clock"></i> 最佳: <span id="statBestTime">—</span></span>
+                </div>
+
+                <div class="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full border border-blue-100/60 shadow-sm">
+                    <i class="fa-regular fa-star text-amber-400 text-sm"></i>
+                    <span class="font-bold text-gray-700 text-sm">得分: <span id="scoreDisplay" class="text-blue-600">0</span></span>
+                </div>
+                <div class="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full border border-blue-100/60 shadow-sm">
+                    <i class="fa-regular fa-clock text-emerald-500 text-sm"></i>
+                    <span class="font-bold text-gray-700 text-sm">时间: <span id="timerDisplay" class="text-emerald-600 timer-pulse">--:--</span></span>
+                </div>
+                <button id="viewHistoryBtn" class="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-semibold rounded-full text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-line text-xs"></i> 历史
+                </button>
+                <!-- 词库管理按钮 -->
+                <button id="manageDictBtn" class="px-3 py-1.5 bg-gradient-to-r from-purple-400 to-purple-600 text-white font-semibold rounded-full text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i> 词库
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ===== 主区域 ===== -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+
+    <!-- 控制面板 -->
+    <div class="glass-card shadow-soft rounded-2xl p-4 mb-5 border border-white/40">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 flex-wrap">
+                <label class="text-sm font-semibold text-gray-600">📚 单元:</label>
+                <select id="unitSelect" class="px-3 py-1.5 border border-blue-200/60 rounded-xl bg-white/70 text-sm text-gray-700 focus:ring-2 focus:ring-blue-300 outline-none transition"></select>
+                <label class="text-sm font-semibold text-gray-600 ml-2">模式:</label>
+                <select id="modeSelect" class="px-3 py-1.5 border border-blue-200/60 rounded-xl bg-white/70 text-sm text-gray-700 focus:ring-2 focus:ring-blue-300 outline-none transition">
+                    <option value="char">单字</option>
+                    <option value="word">词语</option>
+                </select>
+                <span class="text-xs text-gray-400 ml-1" id="cardCountLabel">10 对</span>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button id="randomBtn" class="px-4 py-1.5 bg-gradient-to-r from-blue-400 to-blue-600 text-white font-semibold rounded-xl text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-shuffle text-xs"></i> 刷新
+                </button>
+                <button id="resetBtn" class="px-4 py-1.5 bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right text-xs"></i> 重置
+                </button>
+            </div>
+        </div>
+        <div id="studentStatus" class="mt-2 text-xs text-gray-400 flex items-center gap-2 flex-wrap">
+            <span>👤 当前: <span id="currentStudentDisplay" class="font-semibold text-gray-600">未选择</span></span>
+            <span class="w-px h-4 bg-gray-300 hidden sm:inline"></span>
+            <span id="gameStatusDisplay" class="text-gray-400">⏸ 等待开始</span>
+            <!-- 移动端统计 -->
+            <span class="sm:hidden flex items-center gap-1 text-xs text-gray-500 ml-auto">
+                <span class="stats-badge">场次: <span id="statTotalGamesMobile">0</span></span>
+                <span class="stats-badge">最高: <span id="statBestScoreMobile">—</span></span>
+            </span>
+        </div>
+    </div>
+
+    <!-- 游戏卡片 -->
+    <div class="glass-card shadow-soft rounded-2xl p-5 border border-white/40">
+        <div id="gameBoard" class="grid grid-cols-4 sm:grid-cols-5 gap-2.5"></div>
+        <div id="emptyState" class="text-center py-12 text-gray-400 hidden">
+            <i class="fa-regular fa-face-smile text-4xl block mb-3"></i>
+            <p class="text-sm">输入姓名并点击「开始」来玩游戏吧！</p>
+        </div>
+    </div>
+
+    <!-- 历史面板 -->
+    <div id="historyPanel" class="mt-5 glass-card shadow-soft rounded-2xl p-5 border border-white/40 hidden">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-chart-simple text-indigo-500 text-lg"></i>
+                <h2 class="text-lg font-bold text-gray-800">📊 历史成绩</h2>
+                <span id="historyStudentName" class="student-badge text-xs">—</span>
+            </div>
+            <button id="closeHistoryBtn" class="text-gray-400 hover:text-gray-600 transition text-sm">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="bg-blue-50/70 rounded-xl px-4 py-2.5 text-center border border-blue-100/50">
+                <div class="text-xs text-gray-500">总场次</div>
+                <div class="text-xl font-bold text-blue-600" id="totalGames">0</div>
+            </div>
+            <div class="bg-emerald-50/70 rounded-xl px-4 py-2.5 text-center border border-emerald-100/50">
+                <div class="text-xs text-gray-500">最高分</div>
+                <div class="text-xl font-bold text-emerald-600" id="bestScore">—</div>
+            </div>
+            <div class="bg-amber-50/70 rounded-xl px-4 py-2.5 text-center border border-amber-100/50">
+                <div class="text-xs text-gray-500">最佳用时</div>
+                <div class="text-xl font-bold text-amber-600" id="bestTime">—</div>
+            </div>
+            <div class="bg-purple-50/70 rounded-xl px-4 py-2.5 text-center border border-purple-100/50">
+                <div class="text-xs text-gray-500">近3场均分</div>
+                <div class="text-xl font-bold text-purple-600" id="avgScore">—</div>
+            </div>
+        </div>
+        <div class="mb-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-200/60">
+            <div class="flex items-center gap-2 text-amber-700 font-semibold text-sm mb-2">
+                <i class="fa-solid fa-trophy"></i> 最佳三次成绩
+            </div>
+            <div id="top3Container" class="space-y-1.5"></div>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-gray-100/80">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50/80 text-gray-500 font-semibold">
+                    <tr>
+                        <th class="px-4 py-2.5 text-left">排名</th>
+                        <th class="px-4 py-2.5 text-left">日期</th>
+                        <th class="px-4 py-2.5 text-left">得分</th>
+                        <th class="px-4 py-2.5 text-left">用时</th>
+                        <th class="px-4 py-2.5 text-left">单元</th>
+                        <th class="px-4 py-2.5 text-left">模式</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody" class="divide-y divide-gray-100/60"></tbody>
+            </table>
+        </div>
+        <div id="noHistoryMsg" class="text-center py-6 text-gray-400 text-sm hidden">
+            <i class="fa-regular fa-circle-info mr-1"></i> 暂无历史记录，快去玩一局吧！
+        </div>
+    </div>
+</div>
+
+<!-- ===== 结果弹窗 ===== -->
+<div id="resultModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 text-center border border-white/50 fade-enter">
+        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center mx-auto mb-3 shadow-lg">
+            <i class="fa-solid fa-trophy text-white text-2xl"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-1">🎉 完成！</h2>
+        <div class="space-y-2 my-4 text-left">
+            <div class="flex justify-between items-center bg-blue-50/70 rounded-xl px-4 py-2.5">
+                <span class="text-gray-600 text-sm">学生</span>
+                <span class="font-bold text-blue-600" id="resultStudent">—</span>
+            </div>
+            <div class="flex justify-between items-center bg-emerald-50/70 rounded-xl px-4 py-2.5">
+                <span class="text-gray-600 text-sm">得分</span>
+                <span class="text-xl font-bold text-emerald-600" id="resultScore">0</span>
+            </div>
+            <div class="flex justify-between items-center bg-amber-50/70 rounded-xl px-4 py-2.5">
+                <span class="text-gray-600 text-sm">用时</span>
+                <span class="text-xl font-bold text-amber-600" id="resultTime">00:00</span>
+            </div>
+            <div class="flex justify-between items-center bg-purple-50/70 rounded-xl px-4 py-2.5">
+                <span class="text-gray-600 text-sm">最佳成绩</span>
+                <span class="font-bold text-purple-600" id="resultBest">—</span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button id="resultNextRound" class="flex-1 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition">
+                <i class="fa-regular fa-circle-play mr-1"></i> 继续练习
+            </button>
+            <button id="resultClose" class="flex-1 py-2.5 bg-gray-100 text-gray-600 font-semibold rounded-xl hover:bg-gray-200 transition">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 词库管理弹窗 ===== -->
+<div id="dictModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col border border-white/50">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-pen-to-square text-purple-500 mr-2"></i>词库管理</h2>
+            <button id="closeDictBtn" class="text-gray-400 hover:text-gray-600 transition text-xl">&times;</button>
+        </div>
+        <p class="text-sm text-gray-500 mb-3">修改后点击「保存」即可生效，游戏将自动刷新。删除词语或修改拼音后，游戏中的配对会随之更新。</p>
+        <div class="flex items-center gap-3 mb-3 flex-wrap">
+            <label class="text-sm font-medium text-gray-700">选择单元：</label>
+            <select id="dictUnitSelect" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-purple-300 outline-none"></select>
+            <button id="dictAddCharBtn" class="px-3 py-1.5 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition">+ 添加生字</button>
+            <button id="dictSaveBtn" class="px-4 py-1.5 bg-emerald-500 text-white text-sm rounded-lg hover:bg-emerald-600 transition ml-auto">💾 保存词库</button>
+        </div>
+        <div id="dictEditArea" class="overflow-y-auto flex-1 border border-gray-200 rounded-lg p-2 bg-gray-50/50">
+            <!-- 动态渲染 -->
+        </div>
+        <div class="mt-3 text-xs text-gray-400">提示：词语用逗号分隔，如“天空,今天”。删除词语点击词语后的 ✕ 即可。</div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  1. 默认数据（原始完整数据，已移除“我和”）
+// ============================================================
+const DEFAULT_DATA = {
+    "识字1": [
+        { char: "天", pinyin: "tiān", words: ["天空","今天"] },
+        { char: "地", pinyin: "dì", words: ["大地","土地"] },
+        { char: "人", pinyin: "rén", words: ["人们","大人"] },
+        { char: "你", pinyin: "nǐ", words: ["你们","你好"] },
+        { char: "我", pinyin: "wǒ", words: ["我们","我的"] },
+        { char: "他", pinyin: "tā", words: ["他们","他的"] },
+    ],
+    "识字2": [
+        { char: "一", pinyin: "yī", words: ["一个","一天"] },
+        { char: "二", pinyin: "èr", words: ["二月","第二"] },
+        { char: "三", pinyin: "sān", words: ["三月","三个"] },
+        { char: "四", pinyin: "sì", words: ["四个","四月"] },
+        { char: "五", pinyin: "wǔ", words: ["五个","五月"] },
+        { char: "上", pinyin: "shàng", words: ["上学","上面"] },
+        { char: "下", pinyin: "xià", words: ["下去","下面"] },
+    ],
+    "识字3": [
+        { char: "口", pinyin: "kǒu", words: ["口水","门口"] },
+        { char: "耳", pinyin: "ěr", words: ["耳朵","木耳"] },
+        { char: "目", pinyin: "mù", words: ["目光","耳目"] },
+        { char: "手", pinyin: "shǒu", words: ["小手","手机"] },
+        { char: "足", pinyin: "zú", words: ["手足","足球"] },
+        { char: "站", pinyin: "zhàn", words: ["站立","车站"] },
+        { char: "坐", pinyin: "zuò", words: ["坐下","请坐"] },
+    ],
+    "识字4": [
+        { char: "日", pinyin: "rì", words: ["日子","生日"] },
+        { char: "月", pinyin: "yuè", words: ["月亮","明月"] },
+        { char: "山", pinyin: "shān", words: ["大山","山上"] },
+        { char: "川", pinyin: "chuān", words: ["山川","四川"] },
+        { char: "水", pinyin: "shuǐ", words: ["水果","开水"] },
+        { char: "火", pinyin: "huǒ", words: ["大火","火车"] },
+        { char: "田", pinyin: "tián", words: ["田地","田野"] },
+        { char: "禾", pinyin: "hé", words: ["禾苗","禾田"] },
+    ],
+    "语文园地一": [
+        { char: "六", pinyin: "liù", words: ["六个","六月"] },
+        { char: "七", pinyin: "qī", words: ["七个","七月"] },
+        { char: "八", pinyin: "bā", words: ["八个","八月"] },
+        { char: "九", pinyin: "jiǔ", words: ["九个","九月"] },
+        { char: "十", pinyin: "shí", words: ["十个","十月"] },
+    ],
+    "汉语拼音3": [
+        { char: "爸", pinyin: "bà", words: ["爸爸","老爸"] },
+        { char: "妈", pinyin: "mā", words: ["妈妈","大妈"] },
+    ],
+    "汉语拼音4": [
+        { char: "大", pinyin: "dà", words: ["大人","大小"] },
+        { char: "马", pinyin: "mǎ", words: ["小马","马上"] },
+        { char: "路", pinyin: "lù", words: ["马路","小路"] },
+        { char: "土", pinyin: "tǔ", words: ["土地","泥土"] },
+    ],
+    "语文园地二": [
+        { char: "本", pinyin: "běn", words: ["书本","本子"] },
+        { char: "学", pinyin: "xué", words: ["学习","上学"] },
+        { char: "校", pinyin: "xiào", words: ["学校","校园"] },
+        { char: "班", pinyin: "bān", words: ["班级","班长"] },
+        { char: "级", pinyin: "jí", words: ["年级","班级"] },
+        { char: "姓", pinyin: "xìng", words: ["姓名","百姓"] },
+        { char: "名", pinyin: "míng", words: ["名字","有名"] },
+        { char: "王", pinyin: "wáng", words: ["大王","王子"] },
+    ],
+    "汉语拼音5": [
+        { char: "哥", pinyin: "gē", words: ["哥哥","大哥"] },
+        { char: "弟", pinyin: "dì", words: ["弟弟","兄弟"] },
+        { char: "画", pinyin: "huà", words: ["画画","图画"] },
+        { char: "花", pinyin: "huā", words: ["花朵","开花"] },
+    ],
+    "汉语拼音6": [
+        { char: "打", pinyin: "dǎ", words: ["打水","打球"] },
+        { char: "棋", pinyin: "qí", words: ["下棋","棋盘"] },
+        { char: "积", pinyin: "jī", words: ["积木","堆积"] },
+        { char: "木", pinyin: "mù", words: ["木头","树木"] },
+    ],
+    "汉语拼音7": [
+        { char: "字", pinyin: "zì", words: ["写字","汉字"] },
+        { char: "词", pinyin: "cí", words: ["词语","组词"] },
+        { char: "句", pinyin: "jù", words: ["句子","句号"] },
+        { char: "子", pinyin: "zi", words: ["儿子","孩子"] },
+    ],
+    "汉语拼音8": [
+        { char: "桌", pinyin: "zhuō", words: ["桌子","书桌"] },
+        { char: "纸", pinyin: "zhǐ", words: ["白纸","折纸"] },
+        { char: "读", pinyin: "dú", words: ["读书","朗读"] },
+        { char: "书", pinyin: "shū", words: ["书本","读书"] },
+    ],
+    "汉语拼音9": [
+        { char: "鱼", pinyin: "yú", words: ["小鱼","金鱼"] },
+        { char: "鸭", pinyin: "yā", words: ["鸭子","小鸭"] },
+        { char: "乌", pinyin: "wū", words: ["乌云","乌鸦"] },
+        { char: "鸦", pinyin: "yā", words: ["乌鸦","鸦雀无声"] },
+    ],
+    "语文园地三": [
+        { char: "午", pinyin: "wǔ", words: ["中午","上午"] },
+        { char: "星", pinyin: "xīng", words: ["星星","星光"] },
+        { char: "期", pinyin: "qī", words: ["星期","日期"] },
+        { char: "语", pinyin: "yǔ", words: ["语文","语言"] },
+        { char: "文", pinyin: "wén", words: ["语文","文化"] },
+        { char: "数", pinyin: "shù", words: ["数学","数字"] },
+        { char: "写", pinyin: "xiě", words: ["写字","书写"] },
+        { char: "会", pinyin: "huì", words: ["开会","不会"] },
+    ],
+    "课文10": [
+        { char: "白", pinyin: "bái", words: ["白云","白色"] },
+        { char: "菜", pinyin: "cài", words: ["白菜","青菜"] },
+        { char: "西", pinyin: "xī", words: ["西瓜","东西"] },
+        { char: "瓜", pinyin: "guā", words: ["西瓜","瓜子"] },
+        { char: "果", pinyin: "guǒ", words: ["水果","苹果"] },
+    ],
+    "课文11": [
+        { char: "小", pinyin: "xiǎo", words: ["小心","小鸟"] },
+        { char: "桥", pinyin: "qiáo", words: ["小桥","大桥"] },
+        { char: "流", pinyin: "liú", words: ["流水","河流"] },
+        { char: "柳", pinyin: "liǔ", words: ["柳树","柳条"] },
+    ],
+    "课文12": [
+        { char: "开", pinyin: "kāi", words: ["开门","开心"] },
+        { char: "雪", pinyin: "xuě", words: ["下雪","雪花"] },
+        { char: "夜", pinyin: "yè", words: ["夜晚","黑夜"] },
+        { char: "色", pinyin: "sè", words: ["颜色","红色"] },
+        { char: "美", pinyin: "měi", words: ["美丽","美好"] },
+    ],
+    "课文13": [
+        { char: "蓝", pinyin: "lán", words: ["蓝天","蓝色"] },
+        { char: "云", pinyin: "yún", words: ["白云","云朵"] },
+        { char: "草", pinyin: "cǎo", words: ["小草","花草"] },
+        { char: "原", pinyin: "yuán", words: ["草原","原来"] },
+    ],
+    "课文14": [
+        { char: "冰", pinyin: "bīng", words: ["冰雪","冰冷"] },
+        { char: "自", pinyin: "zì", words: ["自己","自学"] },
+        { char: "行", pinyin: "xíng", words: ["行走","行人"] },
+        { char: "车", pinyin: "chē", words: ["汽车","火车"] },
+    ],
+    "语文园地四": [
+        { char: "晚", pinyin: "wǎn", words: ["晚上","傍晚"] },
+        { char: "昨", pinyin: "zuó", words: ["昨天","昨日"] },
+        { char: "今", pinyin: "jīn", words: ["今天","今年"] },
+        { char: "明", pinyin: "míng", words: ["明天","明亮"] },
+        { char: "个", pinyin: "gè", words: ["一个","个子"] },
+        { char: "这", pinyin: "zhè", words: ["这里","这个"] },
+        { char: "去", pinyin: "qù", words: ["回去","来去"] },
+        { char: "年", pinyin: "nián", words: ["新年","今年"] },
+    ],
+    "阅读1（秋天）": [
+        { char: "秋", pinyin: "qiū", words: ["秋天","秋风"] },
+        { char: "气", pinyin: "qì", words: ["天气","生气"] },
+        { char: "了", pinyin: "le", words: ["好了","来了"] },
+        { char: "树", pinyin: "shù", words: ["树叶","大树"] },
+        { char: "叶", pinyin: "yè", words: ["树叶","叶子"] },
+        { char: "黄", pinyin: "huáng", words: ["黄色","金黄"] },
+        { char: "片", pinyin: "piàn", words: ["一片","图片"] },
+        { char: "从", pinyin: "cóng", words: ["从来","从前"] },
+        { char: "来", pinyin: "lái", words: ["回来","来往"] },
+        { char: "飞", pinyin: "fēi", words: ["飞机","飞鸟"] },
+    ],
+    "阅读2（江南）": [
+        { char: "江", pinyin: "jiāng", words: ["长江","江水"] },
+        { char: "南", pinyin: "nán", words: ["南方","南瓜"] },
+        { char: "可", pinyin: "kě", words: ["可以","可是"] },
+        { char: "采", pinyin: "cǎi", words: ["采莲","采花"] },
+        { char: "莲", pinyin: "lián", words: ["莲花","莲子"] },
+        { char: "戏", pinyin: "xì", words: ["游戏","戏曲"] },
+        { char: "间", pinyin: "jiān", words: ["中间","房间"] },
+        { char: "东", pinyin: "dōng", words: ["东西","东方"] },
+        { char: "北", pinyin: "běi", words: ["北方","北京"] },
+    ],
+    "阅读3": [
+        { char: "的", pinyin: "de", words: ["好的","我的"] },
+        { char: "家", pinyin: "jiā", words: ["回家","家人"] },
+        { char: "鸡", pinyin: "jī", words: ["小鸡","公鸡"] },
+        { char: "竹", pinyin: "zhú", words: ["竹子","竹叶"] },
+        { char: "牙", pinyin: "yá", words: ["牙齿","牙刷"] },
+        { char: "用", pinyin: "yòng", words: ["用心","用处"] },
+        { char: "几", pinyin: "jǐ", words: ["几个","几天"] },
+        { char: "步", pinyin: "bù", words: ["跑步","脚步"] },
+        { char: "没", pinyin: "méi", words: ["没有","没了"] },
+        { char: "参", pinyin: "cān", words: ["参加","参观"] },
+        { char: "加", pinyin: "jiā", words: ["参加","加法"] },
+    ],
+    "阅读4（四季）": [
+        { char: "鸟", pinyin: "niǎo", words: ["小鸟","飞鸟"] },
+        { char: "说", pinyin: "shuō", words: ["说话","听说"] },
+        { char: "是", pinyin: "shì", words: ["是的","可是"] },
+        { char: "春", pinyin: "chūn", words: ["春天","春风"] },
+        { char: "青", pinyin: "qīng", words: ["青草","青色"] },
+        { char: "蛙", pinyin: "wā", words: ["青蛙","牛蛙"] },
+        { char: "夏", pinyin: "xià", words: ["夏天","夏季"] },
+        { char: "着", pinyin: "zhe", words: ["看着","走着"] },
+        { char: "皮", pinyin: "pí", words: ["皮球","果皮"] },
+        { char: "地", pinyin: "de", words: ["土地","大地"] },
+        { char: "就", pinyin: "jiù", words: ["就是","成就"] },
+        { char: "冬", pinyin: "dōng", words: ["冬天","冬季"] },
+    ],
+    "语文园地五": [
+        { char: "男", pinyin: "nán", words: ["男生","男人"] },
+        { char: "女", pinyin: "nǚ", words: ["女生","女儿"] },
+        { char: "关", pinyin: "guān", words: ["关门","关心"] },
+        { char: "正", pinyin: "zhèng", words: ["立正","正在"] },
+        { char: "反", pinyin: "fǎn", words: ["相反","反义词"] },
+        { char: "先", pinyin: "xiān", words: ["先后","先生"] },
+        { char: "后", pinyin: "hòu", words: ["后来","后面"] },
+        { char: "内", pinyin: "nèi", words: ["内外","内容"] },
+        { char: "外", pinyin: "wài", words: ["外面","外地"] },
+    ],
+    "识字5（对韵歌）": [
+        { char: "对", pinyin: "duì", words: ["对错","对面"] },
+        { char: "歌", pinyin: "gē", words: ["唱歌","歌曲"] },
+        { char: "雨", pinyin: "yǔ", words: ["下雨","雨水"] },
+        { char: "风", pinyin: "fēng", words: ["大风","风雨"] },
+        { char: "虫", pinyin: "chóng", words: ["虫子","昆虫"] },
+        { char: "清", pinyin: "qīng", words: ["清水","清洁"] },
+        { char: "绿", pinyin: "lǜ", words: ["绿色","绿叶"] },
+        { char: "桃", pinyin: "táo", words: ["桃子","桃花"] },
+        { char: "红", pinyin: "hóng", words: ["红色","红花"] },
+    ],
+    "识字6（大小多少）": [
+        { char: "力", pinyin: "lì", words: ["力气","用力"] },
+        { char: "尖", pinyin: "jiān", words: ["尖尖","笔尖"] },
+        { char: "尘", pinyin: "chén", words: ["灰尘","尘土"] },
+        { char: "众", pinyin: "zhòng", words: ["大众","众多"] },
+        { char: "双", pinyin: "shuāng", words: ["双手","双数"] },
+        { char: "林", pinyin: "lín", words: ["树林","森林"] },
+        { char: "森", pinyin: "sēn", words: ["森林","阴森"] },
+        { char: "不", pinyin: "bù", words: ["不是","不要"] },
+        { char: "条", pinyin: "tiáo", words: ["一条","条件"] },
+        { char: "心", pinyin: "xīn", words: ["开心","心情"] },
+        { char: "金", pinyin: "jīn", words: ["金色","金子"] },
+    ],
+    "识字7（小书包）": [
+        { char: "包", pinyin: "bāo", words: ["书包","面包"] },
+        { char: "尺", pinyin: "chǐ", words: ["尺子","尺寸"] },
+        { char: "作", pinyin: "zuò", words: ["作业","工作"] },
+        { char: "业", pinyin: "yè", words: ["作业","事业"] },
+        { char: "笔", pinyin: "bǐ", words: ["铅笔","毛笔"] },
+        { char: "刀", pinyin: "dāo", words: ["小刀","刀子"] },
+        { char: "宝", pinyin: "bǎo", words: ["宝贝","宝石"] },
+        { char: "贝", pinyin: "bèi", words: ["贝壳","宝贝"] },
+        { char: "少", pinyin: "shǎo", words: ["多少","少数"] },
+        { char: "课", pinyin: "kè", words: ["上课","课本"] },
+        { char: "早", pinyin: "zǎo", words: ["早上","早晨"] },
+    ],
+    "识字8（升国旗）": [
+        { char: "升", pinyin: "shēng", words: ["升起","上升"] },
+        { char: "国", pinyin: "guó", words: ["中国","国家"] },
+        { char: "旗", pinyin: "qí", words: ["国旗","红旗"] },
+        { char: "中", pinyin: "zhōng", words: ["中国","中午"] },
+        { char: "们", pinyin: "men", words: ["我们","你们"] },
+        { char: "声", pinyin: "shēng", words: ["声音","大声"] },
+        { char: "起", pinyin: "qǐ", words: ["起来","起床"] },
+        { char: "多", pinyin: "duō", words: ["多少","许多"] },
+        { char: "么", pinyin: "me", words: ["什么","怎么"] },
+        { char: "向", pinyin: "xiàng", words: ["方向","向上"] },
+        { char: "立", pinyin: "lì", words: ["立正","站立"] },
+    ],
+    "语文园地六": [
+        { char: "老", pinyin: "lǎo", words: ["老师","老人"] },
+        { char: "师", pinyin: "shī", words: ["老师","师傅"] },
+        { char: "工", pinyin: "gōng", words: ["工人","工厂"] },
+        { char: "厂", pinyin: "chǎng", words: ["工厂","厂长"] },
+        { char: "医", pinyin: "yī", words: ["医生","医院"] },
+        { char: "院", pinyin: "yuàn", words: ["医院","院子"] },
+        { char: "生", pinyin: "shēng", words: ["学生","生日"] },
+        { char: "门", pinyin: "mén", words: ["大门","开门"] },
+        { char: "卫", pinyin: "wèi", words: ["卫生","保卫"] },
+    ],
+    "阅读5（小小的船）": [
+        { char: "船", pinyin: "chuán", words: ["小船","轮船"] },
+        { char: "弯", pinyin: "wān", words: ["弯弯","弯曲"] },
+        { char: "儿", pinyin: "ér", words: ["儿子","儿童"] },
+        { char: "两", pinyin: "liǎng", words: ["两个","两边"] },
+        { char: "头", pinyin: "tóu", words: ["头发","石头"] },
+        { char: "在", pinyin: "zài", words: ["现在","在家"] },
+        { char: "里", pinyin: "lǐ", words: ["里面","心里"] },
+        { char: "看", pinyin: "kàn", words: ["看见","看书"] },
+        { char: "见", pinyin: "jiàn", words: ["看见","见面"] },
+        { char: "闪", pinyin: "shǎn", words: ["闪亮","闪光"] },
+    ],
+    "阅读6（影子）": [
+        { char: "影", pinyin: "yǐng", words: ["影子","电影"] },
+        { char: "前", pinyin: "qián", words: ["前面","以前"] },
+        { char: "常", pinyin: "cháng", words: ["常常","经常"] },
+        { char: "黑", pinyin: "hēi", words: ["黑色","黑夜"] },
+        { char: "狗", pinyin: "gǒu", words: ["小狗","花狗"] },
+        { char: "左", pinyin: "zuǒ", words: ["左右","左边"] },
+        { char: "右", pinyin: "yòu", words: ["左右","右边"] },
+        { char: "它", pinyin: "tā", words: ["它们","其它"] },
+        { char: "好", pinyin: "hǎo", words: ["好人","美好"] },
+        { char: "朋", pinyin: "péng", words: ["朋友","亲朋"] },
+        { char: "友", pinyin: "yǒu", words: ["朋友","友好"] },
+    ],
+    "阅读7": [
+        { char: "件", pinyin: "jiàn", words: ["一件","文件"] },
+        { char: "有", pinyin: "yǒu", words: ["没有","有用"] },
+        { char: "和", pinyin: "hé", words: ["和平","我和"] },
+        { char: "做", pinyin: "zuò", words: ["做工","做事"] },
+        { char: "也", pinyin: "yě", words: ["也是","也好"] },
+        { char: "办", pinyin: "bàn", words: ["办法","办公"] },
+        { char: "到", pinyin: "dào", words: ["到处","来到"] },
+        { char: "又", pinyin: "yòu", words: ["又大又红","又一次"] },
+        { char: "才", pinyin: "cái", words: ["人才","才能"] },
+        { char: "能", pinyin: "néng", words: ["能力","能干"] },
+    ],
+    "语文园地七": [
+        { char: "爷", pinyin: "yé", words: ["爷爷","老爷"] },
+        { char: "奶", pinyin: "nǎi", words: ["奶奶","牛奶"] },
+        { char: "叔", pinyin: "shū", words: ["叔叔","大叔"] },
+        { char: "姐", pinyin: "jiě", words: ["姐姐","大姐"] },
+        { char: "妹", pinyin: "mèi", words: ["妹妹","姐妹"] },
+    ],
+    "阅读8（比尾巴）": [
+        { char: "比", pinyin: "bǐ", words: ["比较","比一比"] },
+        { char: "尾", pinyin: "wěi", words: ["尾巴","结尾"] },
+        { char: "巴", pinyin: "bā", words: ["尾巴","下巴"] },
+        { char: "谁", pinyin: "shuí", words: ["谁的","是谁"] },
+        { char: "长", pinyin: "cháng", words: ["长短","长江"] },
+        { char: "短", pinyin: "duǎn", words: ["长短","短处"] },
+        { char: "把", pinyin: "bǎ", words: ["一把","把手"] },
+        { char: "伞", pinyin: "sǎn", words: ["雨伞","打伞"] },
+        { char: "兔", pinyin: "tù", words: ["兔子","白兔"] },
+        { char: "最", pinyin: "zuì", words: ["最好","最大"] },
+        { char: "公", pinyin: "gōng", words: ["公鸡","公园"] },
+    ],
+    "阅读9（乌鸦喝水）": [
+        { char: "喝", pinyin: "hē", words: ["喝水","喝茶"] },
+        { char: "只", pinyin: "zhī", words: ["一只","只有"] },
+        { char: "处", pinyin: "chù", words: ["到处","处处"] },
+        { char: "找", pinyin: "zhǎo", words: ["找到","寻找"] },
+        { char: "着", pinyin: "zháo", words: ["着火","睡着了"] },
+        { char: "许", pinyin: "xǔ", words: ["许多","也许"] },
+        { char: "石", pinyin: "shí", words: ["石头","石子"] },
+        { char: "出", pinyin: "chū", words: ["出去","出来"] },
+        { char: "法", pinyin: "fǎ", words: ["方法","办法"] },
+        { char: "放", pinyin: "fàng", words: ["放学","放心"] },
+        { char: "进", pinyin: "jìn", words: ["进来","前进"] },
+        { char: "高", pinyin: "gāo", words: ["高兴","高山"] },
+    ],
+    "阅读10（雨点儿）": [
+        { char: "点", pinyin: "diǎn", words: ["雨点","点头"] },
+        { char: "数", pinyin: "shǔ", words: ["数一数","数不清"] },
+        { char: "彩", pinyin: "cǎi", words: ["彩色","彩虹"] },
+        { char: "半", pinyin: "bàn", words: ["一半","半个"] },
+        { char: "空", pinyin: "kōng", words: ["天空","空气"] },
+        { char: "问", pinyin: "wèn", words: ["问题","问好"] },
+        { char: "回", pinyin: "huí", words: ["回来","回家"] },
+        { char: "答", pinyin: "dá", words: ["回答","答案"] },
+        { char: "方", pinyin: "fāng", words: ["方法","方向"] },
+        { char: "久", pinyin: "jiǔ", words: ["很久","久久"] },
+        { char: "更", pinyin: "gèng", words: ["更好","更加"] },
+        { char: "长", pinyin: "zhǎng", words: ["长大","生长"] },
+    ],
+    "语文园地八": [
+        { char: "牛", pinyin: "niú", words: ["小牛","牛奶"] },
+        { char: "羊", pinyin: "yáng", words: ["小羊","山羊"] },
+        { char: "爪", pinyin: "zhuǎ", words: ["爪子","爪牙"] },
+        { char: "元", pinyin: "yuán", words: ["元旦","一元"] },
+        { char: "拼", pinyin: "pīn", words: ["拼音","拼图"] },
+        { char: "音", pinyin: "yīn", words: ["音乐","声音"] },
+    ]
+};
+
+// ============================================================
+//  2. 数据管理（加载自定义数据，默认使用DEFAULT_DATA）
+// ============================================================
+const STORAGE_KEY_DATA = 'hanzi_grade1_dict';
+
+function loadDictData() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY_DATA);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            // 确保所有单元都存在，如果有新增单元则合并
+            let merged = { ...DEFAULT_DATA };
+            for (const unit in parsed) {
+                merged[unit] = parsed[unit];
+            }
+            // 同时保留用户新增的单元
+            return merged;
+        }
+    } catch (e) { console.warn('加载自定义词库失败，使用默认数据'); }
+    return JSON.parse(JSON.stringify(DEFAULT_DATA)); // 深拷贝
+}
+
+function saveDictData(data) {
+    localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(data));
+}
+
+// 当前词库数据（全局）
+let DICT_DATA = loadDictData();
+
+// ============================================================
+//  3. 工具函数
+// ============================================================
+const UNIT_NAMES = Object.keys(DICT_DATA);
+
+function formatTime(sec) {
+    if (sec == null) return '--:--';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function now() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// 构建 字 -> 拼音 映射
+function buildCharPinyinMap(data) {
+    const map = {};
+    for (const unit in data) {
+        for (const item of data[unit]) {
+            map[item.char] = item.pinyin;
+        }
+    }
+    return map;
+}
+
+// 构建词语库（仅取两个字且每个字都在会认字表中，并过滤掉“我和”）
+function buildWordPinyinMap(data) {
+    const charMap = buildCharPinyinMap(data);
+    const wordMap = {};
+    for (const unit in data) {
+        for (const item of data[unit]) {
+            for (const w of item.words) {
+                if (w === '我和') continue;
+                if (w.length === 2) {
+                    const chars = w.split('');
+                    if (chars.every(ch => charMap[ch] !== undefined)) {
+                        const pinyinStr = chars.map(ch => charMap[ch]).join(' ');
+                        if (!wordMap[w]) {
+                            wordMap[w] = pinyinStr;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return wordMap;
+}
+
+// 获取当前词库的单元列表
+function getUnitNames(data) {
+    return Object.keys(data);
+}
+
+// ============================================================
+//  4. 存储（历史成绩）
+// ============================================================
+const STORAGE_KEY_HISTORY = 'hanzi_grade1_history';
+
+function loadAllHistory() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY_HISTORY);
+        return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+}
+
+function saveAllHistory(data) {
+    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(data));
+}
+
+function getStudentHistory(name) {
+    const all = loadAllHistory();
+    return all[name] || [];
+}
+
+function addGameRecord(name, record) {
+    const all = loadAllHistory();
+    if (!all[name]) all[name] = [];
+    all[name].push({
+        date: now(),
+        score: record.score,
+        time: record.time,
+        totalPairs: record.totalPairs,
+        unit: record.unit || '全部',
+        mode: record.mode || 'char',
+        modeLabel: record.mode === 'char' ? '单字' : '词语'
+    });
+    saveAllHistory(all);
+    return all[name];
+}
+
+function getBestScore(history) {
+    if (!history || history.length === 0) return null;
+    return Math.max(...history.map(h => h.score));
+}
+
+function getBestTime(history) {
+    if (!history || history.length === 0) return null;
+    return Math.min(...history.map(h => h.time));
+}
+
+function getRecentAvg(history, n = 3) {
+    if (!history || history.length === 0) return null;
+    const recent = history.slice(-n);
+    const sum = recent.reduce((s, h) => s + h.score, 0);
+    return Math.round(sum / recent.length);
+}
+
+function getTop3(history) {
+    if (!history || history.length === 0) return [];
+    const sorted = [...history].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.time - b.time;
+    });
+    return sorted.slice(0, 3);
+}
+
+// 更新顶部实时统计
+function updateTopStats(studentName) {
+    const history = getStudentHistory(studentName);
+    const total = history.length;
+    const bestSc = getBestScore(history);
+    const bestTm = getBestTime(history);
+    document.getElementById('statTotalGames').textContent = total;
+    document.getElementById('statTotalGamesMobile').textContent = total;
+    document.getElementById('statBestScore').textContent = bestSc !== null ? bestSc : '—';
+    document.getElementById('statBestScoreMobile').textContent = bestSc !== null ? bestSc : '—';
+    document.getElementById('statBestTime').textContent = bestTm !== null ? formatTime(bestTm) : '—';
+}
+
+// ============================================================
+//  5. 游戏状态
+// ============================================================
+let state = {
+    student: '',
+    isPlaying: false,
+    score: 0,
+    elapsed: 0,
+    timerInterval: null,
+    selected: [],
+    matched: 0,
+    totalPairs: 10,
+    cards: [],
+    unit: '全部',
+    mode: 'char',
+    gameStarted: false,
+};
+
+// DOM
+const $ = id => document.getElementById(id);
+const dom = {
+    board: $('gameBoard'),
+    empty: $('emptyState'),
+    score: $('scoreDisplay'),
+    timer: $('timerDisplay'),
+    currentStudent: $('currentStudentDisplay'),
+    gameStatus: $('gameStatusDisplay'),
+    studentInput: $('studentInput'),
+    startBtn: $('startWithNameBtn'),
+    randomBtn: $('randomBtn'),
+    resetBtn: $('resetBtn'),
+    unitSelect: $('unitSelect'),
+    modeSelect: $('modeSelect'),
+    cardCount: $('cardCountLabel'),
+    historyPanel: $('historyPanel'),
+    historyStudentName: $('historyStudentName'),
+    totalGames: $('totalGames'),
+    bestScore: $('bestScore'),
+    bestTime: $('bestTime'),
+    avgScore: $('avgScore'),
+    top3Container: $('top3Container'),
+    historyBody: $('historyTableBody'),
+    noHistoryMsg: $('noHistoryMsg'),
+    closeHistory: $('closeHistoryBtn'),
+    viewHistory: $('viewHistoryBtn'),
+    resultModal: $('resultModal'),
+    resultStudent: $('resultStudent'),
+    resultScore: $('resultScore'),
+    resultTime: $('resultTime'),
+    resultBest: $('resultBest'),
+    resultNextRound: $('resultNextRound'),
+    resultClose: $('resultClose'),
+    // 词库管理
+    manageDictBtn: $('manageDictBtn'),
+    dictModal: $('dictModal'),
+    closeDictBtn: $('closeDictBtn'),
+    dictUnitSelect: $('dictUnitSelect'),
+    dictAddCharBtn: $('dictAddCharBtn'),
+    dictSaveBtn: $('dictSaveBtn'),
+    dictEditArea: $('dictEditArea'),
+};
+
+// ============================================================
+//  6. 核心逻辑
+// ============================================================
+function getUnitChars(unitKey) {
+    if (unitKey === '全部') {
+        let all = [];
+        for (const u in DICT_DATA) all = all.concat(DICT_DATA[u]);
+        return all;
+    }
+    return DICT_DATA[unitKey] || [];
+}
+
+function generateCards(unit, mode, count = 10) {
+    const chars = getUnitChars(unit);
+    let pool = [];
+    if (mode === 'char') {
+        pool = chars.map(item => ({
+            type: 'char',
+            content: item.char,
+            pinyin: item.pinyin,
+            pairId: item.char + item.pinyin,
+        }));
+    } else {
+        const wordMap = buildWordPinyinMap(DICT_DATA);
+        const unitCharsSet = new Set(chars.map(c => c.char));
+        const entries = Object.entries(wordMap).filter(([word]) => {
+            const wordChars = word.split('');
+            return wordChars.some(ch => unitCharsSet.has(ch));
+        });
+        const seen = new Set();
+        for (const [word, pinyin] of entries) {
+            if (!seen.has(word)) {
+                seen.add(word);
+                pool.push({ type: 'word', content: word, pinyin, pairId: word + pinyin });
+            }
+        }
+    }
+
+    if (pool.length === 0) return [];
+
+    const shuffled = shuffle(pool);
+    const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+    const cards = [];
+    selected.forEach((item, idx) => {
+        cards.push({
+            id: `d-${idx}-${Date.now()}-${Math.random()}`,
+            type: 'display',
+            content: item.content,
+            pairId: idx,
+            matched: false,
+            visible: true,
+        });
+        cards.push({
+            id: `p-${idx}-${Date.now()}-${Math.random()}`,
+            type: 'pinyin',
+            content: item.pinyin,
+            pairId: idx,
+            matched: false,
+            visible: true,
+        });
+    });
+    return shuffle(cards);
+}
+
+function renderCards() {
+    dom.board.innerHTML = '';
+    if (state.cards.length === 0) {
+        dom.empty.classList.remove('hidden');
+        return;
+    }
+    dom.empty.classList.add('hidden');
+
+    state.cards.forEach(card => {
+        if (!card.visible) return;
+        const el = document.createElement('div');
+        el.id = card.id;
+        const isDisplay = card.type === 'display';
+        const isSelected = state.selected.includes(card.id);
+        el.className = `
+            card-hover no-select w-full aspect-square rounded-xl flex items-center justify-center 
+            text-base sm:text-lg font-bold cursor-pointer border-2 transition-all duration-200
+            ${isDisplay ? 'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-400' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-400'}
+            ${isSelected ? 'ring-4 ring-amber-400 scale-105 shadow-lg' : ''}
+        `;
+        el.textContent = card.content;
+        el.addEventListener('click', () => onCardClick(card.id));
+        dom.board.appendChild(el);
+    });
+
+    const visible = state.cards.filter(c => c.visible).length;
+    dom.cardCount.textContent = `${visible / 2} 对`;
+}
+
+function onCardClick(id) {
+    if (!state.isPlaying || !state.student) return;
+    const card = state.cards.find(c => c.id === id);
+    if (!card || !card.visible || card.matched || state.selected.includes(id)) return;
+    if (state.selected.length >= 2) return;
+
+    state.selected.push(id);
+    const el = document.getElementById(id);
+    if (el) el.classList.add('ring-4', 'ring-amber-400', 'scale-105', 'shadow-lg');
+
+    if (state.selected.length === 2) {
+        setTimeout(checkMatch, 400);
+    }
+}
+
+function checkMatch() {
+    if (state.selected.length !== 2) return;
+    const [id1, id2] = state.selected;
+    const card1 = state.cards.find(c => c.id === id1);
+    const card2 = state.cards.find(c => c.id === id2);
+    if (!card1 || !card2) {
+        state.selected = [];
+        renderCards();
+        return;
+    }
+
+    const isMatch = (card1.pairId === card2.pairId && card1.type !== card2.type);
+
+    if (isMatch) {
+        card1.matched = true;
+        card2.matched = true;
+        state.score += 10;
+        state.matched += 1;
+
+        const el1 = document.getElementById(id1);
+        const el2 = document.getElementById(id2);
+        if (el1) el1.classList.add('match-animation');
+        if (el2) el2.classList.add('match-animation');
+
+        setTimeout(() => {
+            card1.visible = false;
+            card2.visible = false;
+            state.selected = [];
+            updateScoreUI();
+            renderCards();
+            if (state.matched === state.totalPairs) {
+                endGame();
+            }
+        }, 550);
+    } else {
+        card1.matched = false;
+        card2.matched = false;
+        state.selected = [];
+        renderCards();
+    }
+    updateScoreUI();
+}
+
+function startGame() {
+    const name = dom.studentInput.value.trim();
+    if (!name) {
+        dom.studentInput.focus();
+        dom.studentInput.style.borderColor = '#ef4444';
+        setTimeout(() => dom.studentInput.style.borderColor = '', 1200);
+        return;
+    }
+    state.student = name;
+    dom.currentStudent.textContent = name;
+    dom.gameStatus.textContent = '▶ 游戏中...';
+    dom.gameStatus.className = 'text-emerald-600 font-medium';
+
+    state.isPlaying = true;
+    state.gameStarted = true;
+    state.score = 0;
+    state.elapsed = 0;
+    state.matched = 0;
+    state.selected = [];
+    state.unit = dom.unitSelect.value;
+    state.mode = dom.modeSelect.value;
+
+    const count = 10;
+    state.cards = generateCards(state.unit, state.mode, count);
+    if (state.cards.length === 0) {
+        if (state.mode === 'word') {
+            dom.modeSelect.value = 'char';
+            state.mode = 'char';
+            state.cards = generateCards(state.unit, 'char', count);
+        }
+        if (state.cards.length === 0) {
+            alert('当前单元没有可用的卡片，请切换单元或模式。');
+            state.isPlaying = false;
+            dom.startBtn.disabled = false;
+            dom.startBtn.textContent = '▶ 开始';
+            return;
+        }
+    }
+    state.totalPairs = Math.min(count, state.cards.length / 2);
+    state.cards.forEach(c => { c.visible = true; c.matched = false; });
+
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(() => {
+        state.elapsed += 1;
+        dom.timer.textContent = formatTime(state.elapsed);
+    }, 1000);
+
+    updateScoreUI();
+    renderCards();
+    dom.startBtn.disabled = true;
+    dom.startBtn.textContent = '⏳ 游戏中...';
+}
+
+function endGame() {
+    state.isPlaying = false;
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+    dom.gameStatus.textContent = '✅ 已完成！';
+    dom.gameStatus.className = 'text-emerald-600 font-medium';
+
+    const record = {
+        score: state.score,
+        time: state.elapsed,
+        totalPairs: state.totalPairs,
+        unit: state.unit,
+        mode: state.mode,
+    };
+    addGameRecord(state.student, record);
+    updateTopStats(state.student);
+
+    if (!dom.historyPanel.classList.contains('hidden')) {
+        renderHistory(state.student);
+    }
+
+    const history = getStudentHistory(state.student);
+    const best = getBestScore(history);
+    dom.resultStudent.textContent = state.student;
+    dom.resultScore.textContent = state.score;
+    dom.resultTime.textContent = formatTime(state.elapsed);
+    dom.resultBest.textContent = best !== null ? `${best} 分` : '—';
+    dom.resultModal.classList.remove('hidden');
+
+    dom.startBtn.disabled = false;
+    dom.startBtn.textContent = '▶ 开始';
+    updateScoreUI();
+}
+
+function resetAndStart() {
+    resetGame();
+    setTimeout(startGame, 300);
+}
+
+function resetGame() {
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+    state.isPlaying = false;
+    state.gameStarted = false;
+    state.score = 0;
+    state.elapsed = 0;
+    state.matched = 0;
+    state.selected = [];
+    state.cards = [];
+    dom.timer.textContent = '--:--';
+    dom.gameStatus.textContent = '⏸ 等待开始';
+    dom.gameStatus.className = 'text-gray-400';
+    dom.startBtn.disabled = false;
+    dom.startBtn.textContent = '▶ 开始';
+    updateScoreUI();
+    renderCards();
+    dom.board.innerHTML = '';
+    dom.empty.classList.remove('hidden');
+}
+
+function updateScoreUI() {
+    dom.score.textContent = state.score;
+    dom.timer.textContent = formatTime(state.elapsed);
+}
+
+// ============================================================
+//  7. 历史渲染
+// ============================================================
+function renderHistory(studentName) {
+    const history = getStudentHistory(studentName);
+    dom.historyStudentName.textContent = studentName || '—';
+
+    if (!history || history.length === 0) {
+        dom.noHistoryMsg.classList.remove('hidden');
+        dom.historyBody.innerHTML = '';
+        dom.top3Container.innerHTML = '<div class="text-gray-400 text-sm">暂无数据</div>';
+        dom.totalGames.textContent = '0';
+        dom.bestScore.textContent = '—';
+        dom.bestTime.textContent = '—';
+        dom.avgScore.textContent = '—';
+        return;
+    }
+    dom.noHistoryMsg.classList.add('hidden');
+
+    const total = history.length;
+    const bestSc = getBestScore(history);
+    const bestTm = getBestTime(history);
+    const avg = getRecentAvg(history, 3);
+    dom.totalGames.textContent = total;
+    dom.bestScore.textContent = bestSc !== null ? `${bestSc}` : '—';
+    dom.bestTime.textContent = bestTm !== null ? formatTime(bestTm) : '—';
+    dom.avgScore.textContent = avg !== null ? `${avg}` : '—';
+
+    const top3 = getTop3(history);
+    if (top3.length === 0) {
+        dom.top3Container.innerHTML = '<div class="text-gray-400 text-sm">暂无数据</div>';
+    } else {
+        dom.top3Container.innerHTML = top3.map((rec, idx) => {
+            const rank = idx + 1;
+            const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
+            return `
+                <div class="flex items-center justify-between text-sm px-3 py-1.5 rounded-lg ${rank === 1 ? 'bg-amber-100/80' : 'bg-gray-50/80'}">
+                    <span class="font-bold text-gray-700 w-8">${medal}</span>
+                    <span class="text-gray-600 flex-1">${rec.date || '—'}</span>
+                    <span class="font-bold text-blue-600 w-12 text-center">${rec.score}</span>
+                    <span class="text-gray-500 w-16 text-center font-mono">${formatTime(rec.time)}</span>
+                    <span class="text-gray-400 text-xs w-20 truncate">${rec.unit}</span>
+                    <span class="mode-tag">${rec.modeLabel || '单字'}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    const sorted = [...history].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.time - b.time;
+    });
+
+    dom.historyBody.innerHTML = sorted.map((rec, idx) => {
+        const rank = idx + 1;
+        let rankClass = '';
+        if (rank === 1) rankClass = 'rank-1';
+        else if (rank === 2) rankClass = 'rank-2';
+        else if (rank === 3) rankClass = 'rank-3';
+        return `
+            <tr class="${rankClass}">
+                <td class="px-4 py-2.5 font-medium">
+                    <span class="rank-badge">${rank}</span>
+                </td>
+                <td class="px-4 py-2.5 text-gray-600 text-xs">${rec.date || '—'}</td>
+                <td class="px-4 py-2.5 font-bold text-blue-600">${rec.score}</td>
+                <td class="px-4 py-2.5 text-gray-600 font-mono">${formatTime(rec.time)}</td>
+                <td class="px-4 py-2.5 text-gray-500 text-xs">${rec.unit}</td>
+                <td class="px-4 py-2.5"><span class="mode-tag">${rec.modeLabel || '单字'}</span></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// ============================================================
+//  8. 词库管理界面
+// ============================================================
+function renderDictEditor(unit) {
+    const area = dom.dictEditArea;
+    const data = DICT_DATA[unit] || [];
+    let html = '';
+    data.forEach((item, index) => {
+        const wordsStr = item.words.join(',');
+        html += `
+            <div class="edit-row" data-index="${index}">
+                <input class="char-input" type="text" value="${item.char}" placeholder="字" />
+                <input class="pinyin-input" type="text" value="${item.pinyin}" placeholder="拼音" />
+                <input class="word-list-input" type="text" value="${wordsStr}" placeholder="词语用逗号分隔" />
+                <button class="btn-sm btn-del" data-index="${index}">删除</button>
+                <button class="btn-sm btn-add-word" data-index="${index}">+词语</button>
+                <span style="font-size:0.7rem;color:#9ca3af;">词语数: ${item.words.length}</span>
+            </div>
+        `;
+    });
+    area.innerHTML = html;
+
+    // 绑定删除按钮
+    area.querySelectorAll('.btn-del').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.index);
+            if (confirm(`确定要删除“${data[idx].char}”吗？`)) {
+                data.splice(idx, 1);
+                DICT_DATA[unit] = data;
+                renderDictEditor(unit);
+            }
+        });
+    });
+
+    // 绑定添加词语按钮（在词语列表末尾添加一个空词语占位，用户可自行编辑）
+    area.querySelectorAll('.btn-add-word').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.index);
+            const currentWords = data[idx].words;
+            currentWords.push('新词');
+            DICT_DATA[unit] = data;
+            renderDictEditor(unit);
+        });
+    });
+
+    // 绑定输入框变化（实时更新内存，但先不保存，等用户点击保存）
+    area.querySelectorAll('.edit-row').forEach(row => {
+        const charInput = row.querySelector('.char-input');
+        const pinyinInput = row.querySelector('.pinyin-input');
+        const wordInput = row.querySelector('.word-list-input');
+        const idx = parseInt(row.dataset.index);
+        charInput.addEventListener('change', function() {
+            data[idx].char = this.value.trim() || data[idx].char;
+        });
+        pinyinInput.addEventListener('change', function() {
+            data[idx].pinyin = this.value.trim() || data[idx].pinyin;
+        });
+        wordInput.addEventListener('change', function() {
+            const raw = this.value.trim();
+            const words = raw ? raw.split(',').map(s => s.trim()).filter(s => s) : [];
+            data[idx].words = words;
+        });
+    });
+}
+
+function openDictModal() {
+    // 填充单元下拉
+    const select = dom.dictUnitSelect;
+    select.innerHTML = '';
+    const unitNames = getUnitNames(DICT_DATA);
+    unitNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+    });
+    // 默认选中当前游戏选择的单元
+    const currentUnit = dom.unitSelect.value;
+    if (unitNames.includes(currentUnit)) select.value = currentUnit;
+    else select.value = unitNames[0] || '';
+
+    renderDictEditor(select.value);
+    dom.dictModal.classList.remove('hidden');
+
+    // 切换单元时重新渲染
+    select.onchange = function() {
+        renderDictEditor(this.value);
+    };
+}
+
+function saveDictChanges() {
+    // 从编辑区读取最新数据
+    const unit = dom.dictUnitSelect.value;
+    const rows = dom.dictEditArea.querySelectorAll('.edit-row');
+    const data = [];
+    rows.forEach(row => {
+        const charVal = row.querySelector('.char-input').value.trim();
+        const pinyinVal = row.querySelector('.pinyin-input').value.trim();
+        const wordsRaw = row.querySelector('.word-list-input').value.trim();
+        const words = wordsRaw ? wordsRaw.split(',').map(s => s.trim()).filter(s => s) : [];
+        if (charVal) {
+            data.push({ char: charVal, pinyin: pinyinVal || '?', words });
+        }
+    });
+    DICT_DATA[unit] = data;
+    saveDictData(DICT_DATA);
+    // 刷新单元下拉（如果添加了新单元，需要刷新）
+    const unitSelect = dom.unitSelect;
+    const currentVal = unitSelect.value;
+    populateUnitSelect();
+    if (getUnitNames(DICT_DATA).includes(currentVal)) unitSelect.value = currentVal;
+    else unitSelect.value = '全部';
+
+    // 刷新卡片
+    if (!state.isPlaying) {
+        const unit = dom.unitSelect.value;
+        const mode = dom.modeSelect.value;
+        const count = 10;
+        state.cards = generateCards(unit, mode, count);
+        if (state.cards.length === 0 && mode === 'word') {
+            dom.modeSelect.value = 'char';
+            state.mode = 'char';
+            state.cards = generateCards(unit, 'char', count);
+        }
+        state.totalPairs = Math.min(count, state.cards.length / 2);
+        state.matched = 0;
+        state.score = 0;
+        state.selected = [];
+        state.cards.forEach(c => { c.visible = true; c.matched = false; });
+        updateScoreUI();
+        renderCards();
+        dom.gameStatus.textContent = `📚 已更新词库`;
+        dom.gameStatus.className = 'text-gray-400';
+    } else {
+        alert('游戏进行中，词库已保存，下一局将生效。');
+    }
+
+    // 关闭弹窗
+    dom.dictModal.classList.add('hidden');
+    // 提示
+    alert('词库已保存！');
+}
+
+// 添加生字（在编辑区末尾添加一行空白）
+function addNewChar() {
+    const unit = dom.dictUnitSelect.value;
+    if (!unit) return;
+    const data = DICT_DATA[unit] || [];
+    data.push({ char: '新字', pinyin: 'xin', words: ['示例词'] });
+    DICT_DATA[unit] = data;
+    renderDictEditor(unit);
+}
+
+// 填充单元下拉（游戏控制面板）
+function populateUnitSelect() {
+    const select = dom.unitSelect;
+    select.innerHTML = '';
+    const allOpt = document.createElement('option');
+    allOpt.value = '全部';
+    allOpt.textContent = '全部单元';
+    select.appendChild(allOpt);
+    const unitNames = getUnitNames(DICT_DATA);
+    unitNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+    });
+}
+
+// ============================================================
+//  9. 事件绑定 & 初始化
+// ============================================================
+// 初始化单元下拉
+populateUnitSelect();
+
+// 开始
+dom.startBtn.addEventListener('click', startGame);
+dom.studentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') startGame(); });
+
+// 刷新
+dom.randomBtn.addEventListener('click', () => {
+    if (state.isPlaying) return;
+    const unit = dom.unitSelect.value;
+    const mode = dom.modeSelect.value;
+    const count = 10;
+    state.cards = generateCards(unit, mode, count);
+    if (state.cards.length === 0 && mode === 'word') {
+        dom.modeSelect.value = 'char';
+        state.mode = 'char';
+        state.cards = generateCards(unit, 'char', count);
+    }
+    state.totalPairs = Math.min(count, state.cards.length / 2);
+    state.matched = 0;
+    state.score = 0;
+    state.selected = [];
+    state.cards.forEach(c => { c.visible = true; c.matched = false; });
+    updateScoreUI();
+    renderCards();
+    dom.gameStatus.textContent = '🔄 已刷新';
+    dom.gameStatus.className = 'text-gray-400';
+});
+
+// 重置
+dom.resetBtn.addEventListener('click', () => {
+    if (state.isPlaying && !confirm('游戏进行中，确定要重置吗？')) return;
+    resetGame();
+    dom.gameStatus.textContent = '🔄 已重置';
+    dom.gameStatus.className = 'text-gray-400';
+});
+
+// 切换单元/模式
+const onUnitOrModeChange = () => {
+    if (state.isPlaying) return;
+    const unit = dom.unitSelect.value;
+    const mode = dom.modeSelect.value;
+    const count = 10;
+    state.cards = generateCards(unit, mode, count);
+    if (state.cards.length === 0 && mode === 'word') {
+        dom.modeSelect.value = 'char';
+        state.mode = 'char';
+        state.cards = generateCards(unit, 'char', count);
+    }
+    state.totalPairs = Math.min(count, state.cards.length / 2);
+    state.matched = 0;
+    state.score = 0;
+    state.selected = [];
+    state.cards.forEach(c => { c.visible = true; c.matched = false; });
+    updateScoreUI();
+    renderCards();
+    dom.gameStatus.textContent = `📚 ${unit} · ${mode === 'char' ? '单字' : '词语'}`;
+    dom.gameStatus.className = 'text-gray-400';
+};
+dom.unitSelect.addEventListener('change', onUnitOrModeChange);
+dom.modeSelect.addEventListener('change', onUnitOrModeChange);
+
+// 历史
+dom.viewHistory.addEventListener('click', () => {
+    const name = dom.studentInput.value.trim() || state.student;
+    if (!name) {
+        dom.studentInput.focus();
+        dom.studentInput.style.borderColor = '#ef4444';
+        setTimeout(() => dom.studentInput.style.borderColor = '', 1200);
+        return;
+    }
+    state.student = name;
+    dom.currentStudent.textContent = name;
+    dom.historyPanel.classList.remove('hidden');
+    renderHistory(name);
+    dom.historyPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+dom.closeHistory.addEventListener('click', () => dom.historyPanel.classList.add('hidden'));
+
+// 结果弹窗
+dom.resultNextRound.addEventListener('click', () => {
+    dom.resultModal.classList.add('hidden');
+    resetAndStart();
+});
+dom.resultClose.addEventListener('click', () => {
+    dom.resultModal.classList.add('hidden');
+    if (!dom.historyPanel.classList.contains('hidden') && state.student) renderHistory(state.student);
+});
+dom.resultModal.addEventListener('click', (e) => {
+    if (e.target === dom.resultModal) {
+        dom.resultModal.classList.add('hidden');
+        if (!dom.historyPanel.classList.contains('hidden') && state.student) renderHistory(state.student);
+    }
+});
+
+// 学生姓名变更
+dom.studentInput.addEventListener('change', () => {
+    const name = dom.studentInput.value.trim();
+    if (name) {
+        try { localStorage.setItem('hanzi_grade1_last_student', name); } catch {}
+        state.student = name;
+        dom.currentStudent.textContent = name;
+        updateTopStats(name);
+        if (!dom.historyPanel.classList.contains('hidden')) {
+            renderHistory(name);
+        }
+    }
+});
+
+// ===== 词库管理事件 =====
+dom.manageDictBtn.addEventListener('click', openDictModal);
+dom.closeDictBtn.addEventListener('click', () => dom.dictModal.classList.add('hidden'));
+dom.dictModal.addEventListener('click', (e) => {
+    if (e.target === dom.dictModal) dom.dictModal.classList.add('hidden');
+});
+dom.dictAddCharBtn.addEventListener('click', addNewChar);
+dom.dictSaveBtn.addEventListener('click', saveDictChanges);
+
+// ============================================================
+//  10. 初始化
+// ============================================================
+function init() {
+    try {
+        const saved = localStorage.getItem('hanzi_grade1_last_student');
+        if (saved) {
+            dom.studentInput.value = saved;
+            state.student = saved;
+            dom.currentStudent.textContent = saved;
+            updateTopStats(saved);
+        }
+    } catch {}
+
+    const unit = dom.unitSelect.value || '全部';
+    const mode = dom.modeSelect.value || 'char';
+    const count = 10;
+    state.cards = generateCards(unit, mode, count);
+    if (state.cards.length === 0 && mode === 'word') {
+        dom.modeSelect.value = 'char';
+        state.mode = 'char';
+        state.cards = generateCards(unit, 'char', count);
+    }
+    state.totalPairs = Math.min(count, state.cards.length / 2);
+    state.matched = 0;
+    state.score = 0;
+    state.selected = [];
+    state.cards.forEach(c => { c.visible = true; c.matched = false; });
+    renderCards();
+    updateScoreUI();
+    dom.gameStatus.textContent = '👋 输入姓名，点击开始';
+    dom.gameStatus.className = 'text-gray-400';
+
+    if (state.student) {
+        const hist = getStudentHistory(state.student);
+        if (hist.length > 0) {
+            dom.historyPanel.classList.remove('hidden');
+            renderHistory(state.student);
+        }
+    }
+
+    if (!dom.studentInput.value) dom.studentInput.focus();
+
+    console.log('✅ 一年级会认字版已加载 (词库可编辑)');
+    console.log(`📚 ${Object.keys(DICT_DATA).length} 个单元，总字量 ${Object.values(DICT_DATA).reduce((s, arr) => s + arr.length, 0)}`);
+}
+
+init();
+</script>
+</body>
+</html>
