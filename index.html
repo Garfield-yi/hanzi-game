@@ -94,15 +94,112 @@
             font-weight: bold;
         }
         .word-tag .del-word:hover { color: #b91c1c; }
+
+        @media (max-width: 640px) {
+            nav.app-header {
+                position: static;
+            }
+            .app-header-inner {
+                padding-top: 14px;
+                padding-bottom: 14px;
+            }
+            .app-header-row {
+                height: auto !important;
+                align-items: stretch;
+            }
+            .app-brand {
+                width: 100%;
+            }
+            .app-brand h1 {
+                font-size: 1.75rem;
+                line-height: 1.15;
+            }
+            .app-toolbar {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                width: 100%;
+            }
+            .student-chip {
+                grid-column: 1 / -1;
+                width: 100%;
+                min-width: 0;
+                justify-content: space-between;
+                border-radius: 18px;
+                padding: 10px 12px;
+            }
+            .student-chip input {
+                flex: 1;
+                width: auto !important;
+                min-width: 0;
+                font-size: 1rem;
+            }
+            .mobile-stat-chip,
+            .mobile-nav-action {
+                width: 100%;
+                min-height: 44px;
+                justify-content: center;
+                border-radius: 18px;
+                padding: 9px 10px;
+            }
+            .mobile-nav-action {
+                font-size: 1rem;
+            }
+            .app-main {
+                padding-top: 14px;
+            }
+            .control-row,
+            .control-left,
+            .control-right,
+            #studentStatus {
+                width: 100%;
+            }
+            .control-left {
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr);
+                align-items: center;
+                gap: 10px;
+            }
+            .control-left label {
+                margin-left: 0 !important;
+                white-space: nowrap;
+            }
+            .control-left select {
+                width: 100%;
+                min-width: 0;
+            }
+            .control-left #cardCountLabel {
+                grid-column: 2;
+                margin-left: 0 !important;
+            }
+            .control-right {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+            .control-right button {
+                width: 100%;
+                min-height: 44px;
+                justify-content: center;
+            }
+            #studentStatus {
+                align-items: flex-start;
+            }
+            #studentStatus > span:last-child {
+                margin-left: 0 !important;
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
     </style>
 </head>
 <body>
 
 <!-- ===== 顶部导航 ===== -->
-<nav class="glass-card shadow-soft sticky top-0 z-50 border-b border-white/40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-wrap items-center justify-between h-16 gap-2">
-            <div class="flex items-center gap-3">
+<nav class="app-header glass-card shadow-soft sticky top-0 z-50 border-b border-white/40">
+    <div class="app-header-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="app-header-row flex flex-wrap items-center justify-between h-16 gap-2">
+            <div class="app-brand flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
                     <i class="fa-solid fa-puzzle-piece text-white text-sm"></i>
                 </div>
@@ -110,9 +207,9 @@
                 <span class="hidden sm:inline text-xs text-gray-400 font-medium ml-1">· 一年级</span>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="app-toolbar flex flex-wrap items-center gap-3">
                 <!-- 学生输入 -->
-                <div class="flex items-center gap-2 bg-white/60 rounded-full px-3 py-1.5 border border-blue-100/60 shadow-sm">
+                <div class="student-chip flex items-center gap-2 bg-white/60 rounded-full px-3 py-1.5 border border-blue-100/60 shadow-sm">
                     <i class="fa-regular fa-user text-blue-400 text-sm"></i>
                     <input id="studentInput" type="text" placeholder="输入姓名..." maxlength="20"
                         class="bg-transparent border-none outline-none text-sm w-24 sm:w-32 text-gray-700 placeholder-gray-400 font-medium" />
@@ -128,19 +225,19 @@
                     <span class="stats-badge"><i class="fa-regular fa-clock"></i> 最佳: <span id="statBestTime">—</span></span>
                 </div>
 
-                <div class="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full border border-blue-100/60 shadow-sm">
+                <div class="mobile-stat-chip flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full border border-blue-100/60 shadow-sm">
                     <i class="fa-regular fa-star text-amber-400 text-sm"></i>
                     <span class="font-bold text-gray-700 text-sm">得分: <span id="scoreDisplay" class="text-blue-600">0</span></span>
                 </div>
-                <div class="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full border border-blue-100/60 shadow-sm">
+                <div class="mobile-stat-chip flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full border border-blue-100/60 shadow-sm">
                     <i class="fa-regular fa-clock text-emerald-500 text-sm"></i>
                     <span class="font-bold text-gray-700 text-sm">时间: <span id="timerDisplay" class="text-emerald-600 timer-pulse">--:--</span></span>
                 </div>
-                <button id="viewHistoryBtn" class="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-semibold rounded-full text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
+                <button id="viewHistoryBtn" class="mobile-nav-action px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-semibold rounded-full text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
                     <i class="fa-solid fa-chart-line text-xs"></i> 历史
                 </button>
                 <!-- 词库管理按钮 -->
-                <button id="manageDictBtn" class="px-3 py-1.5 bg-gradient-to-r from-purple-400 to-purple-600 text-white font-semibold rounded-full text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
+                <button id="manageDictBtn" class="mobile-nav-action px-3 py-1.5 bg-gradient-to-r from-purple-400 to-purple-600 text-white font-semibold rounded-full text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
                     <i class="fa-solid fa-pen-to-square text-xs"></i> 词库
                 </button>
             </div>
@@ -149,12 +246,12 @@
 </nav>
 
 <!-- ===== 主区域 ===== -->
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+<div class="app-main max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
 
     <!-- 控制面板 -->
     <div class="glass-card shadow-soft rounded-2xl p-4 mb-5 border border-white/40">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2 flex-wrap">
+        <div class="control-row flex flex-wrap items-center justify-between gap-3">
+            <div class="control-left flex items-center gap-2 flex-wrap">
                 <label class="text-sm font-semibold text-gray-600">📚 单元:</label>
                 <select id="unitSelect" class="px-3 py-1.5 border border-blue-200/60 rounded-xl bg-white/70 text-sm text-gray-700 focus:ring-2 focus:ring-blue-300 outline-none transition"></select>
                 <label class="text-sm font-semibold text-gray-600 ml-2">模式:</label>
@@ -164,7 +261,7 @@
                 </select>
                 <span class="text-xs text-gray-400 ml-1" id="cardCountLabel">10 对</span>
             </div>
-            <div class="flex items-center gap-2 flex-wrap">
+            <div class="control-right flex items-center gap-2 flex-wrap">
                 <button id="randomBtn" class="px-4 py-1.5 bg-gradient-to-r from-blue-400 to-blue-600 text-white font-semibold rounded-xl text-sm shadow-sm hover:shadow-md transition flex items-center gap-1.5">
                     <i class="fa-solid fa-shuffle text-xs"></i> 刷新
                 </button>
